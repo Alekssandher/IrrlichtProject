@@ -1,7 +1,12 @@
 #include <irrlicht/irrlicht.h>
 #include "irrlicht/driverChoice.h"
 
+#define DEV
+
+#include "headers/perfomance_infos.hpp"
+
 #include <iostream>
+#include <cstdint>
 
 using namespace irr;
 
@@ -20,7 +25,7 @@ void rotate_cube(scene::ISceneNode* & cube, float delta_t)
 float calc_delta(IrrlichtDevice *& device, u32 & last_time)
 {
     u32 now = device->getTimer()->getTime();
-    float deltaTime = (now - last_time) / 1000.0f; 
+    float deltaTime = static_cast<float>((now - last_time)) / 1000.0f; 
     last_time = now;
 
     return deltaTime;
@@ -112,6 +117,10 @@ int main()
         scenemgr->drawAll(); 
         guienv->drawAll();
         driver->endScene();
+        
+        #ifdef DEV
+        std::cout << "RAM: " << get_memory_usage() << " KB\n";
+        #endif
     }
 
     device->drop();
