@@ -1,9 +1,6 @@
 #ifdef DEV
+#include <cstddef>
 
-size_t get_memory_usage();
-
-double get_gpu_usage();
-
-void print_gpu_usage();
+void get_memory_usage();
 
 #endif

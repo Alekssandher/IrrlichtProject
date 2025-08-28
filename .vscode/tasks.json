@@ -10,7 +10,9 @@
                 "-Wextra",
                 "-pedantic",
                 "-O2",
-                "./code/main.cpp",
+                "-I./src/headers",
+                "./src/*.cpp",
+                "./src/utils/*.cpp",
                 "-o",
                 "./build/main",
                 "-lIrrlicht"

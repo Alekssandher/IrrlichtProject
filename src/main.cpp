@@ -4,6 +4,7 @@
 #define DEV
 
 #include "headers/perfomance_infos.hpp"
+#include "headers/config.hpp"
 
 #include <iostream>
 #include <cstdint>
@@ -80,10 +81,25 @@ int main()
 {
     MyEventReceiver receiver;
     
-    IrrlichtDevice *device = createDevice(video::EDT_OPENGL, core::dimension2d<u32>(640, 480), 16, false, false, false, &receiver);
+    IrrlichtDevice *device = createDevice(
+        video::EDT_OPENGL, Config::SCREEN_SIZE,
+        Config::COLOR_DEPTH,
+        Config::FULL_SCREEN, 
+        Config::STENCIL_BUFFER, 
+        Config::VSYNC, 
+        &receiver
+    );
 
     if (!device)
-        return 1;
+        device = createDevice(
+            video::EDT_SOFTWARE,
+            Config::SCREEN_SIZE,
+            Config::COLOR_DEPTH,
+            Config::FULL_SCREEN,
+            Config::STENCIL_BUFFER,
+            Config::VSYNC,
+            &receiver
+        );
 
     video::IVideoDriver* driver = device->getVideoDriver();
     scene::ISceneManager* scenemgr = device->getSceneManager();
@@ -119,7 +135,7 @@ int main()
         driver->endScene();
         
         #ifdef DEV
-        std::cout << "RAM: " << get_memory_usage() << " KB\n";
+        get_memory_usage();
         #endif
     }
 

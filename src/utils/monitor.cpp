@@ -2,8 +2,9 @@
 #include <string>
 #include <unistd.h>
 #include <iostream>
+#include "../headers/perfomance_infos.hpp"
 
-size_t get_memory_usage()
+void get_memory_usage()
 {
     std::ifstream statm("/proc/self/statm");
 
@@ -14,6 +15,10 @@ size_t get_memory_usage()
 
     size_t page_size_kb = static_cast<size_t>(sysconf(_SC_PAGE_SIZE) / 1024);
 
-    return resident * page_size_kb;
+    size_t mem_usage { resident * page_size_kb};
+
+    std::cout << "RAM: " << mem_usage << " KB\n";
+
+    return;
 }
 
