@@ -13,6 +13,8 @@
                 "-I./src/headers",
                 "./src/*.cpp",
                 "./src/utils/*.cpp",
+                "./src/area/*.cpp",
+                "./src/regions/*.cpp",
                 "-o",
                 "./build/main",
                 "-lIrrlicht"

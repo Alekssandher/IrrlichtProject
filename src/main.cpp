@@ -5,24 +5,18 @@
 
 #include "headers/perfomance_infos.hpp"
 #include "headers/config.hpp"
+#include "headers/area.hpp"
+#include "headers/home.hpp"
 
+#include <cstdlib> 
+#include <ctime> 
 #include <iostream>
 #include <cstdint>
 
 using namespace irr;
 
-float r_degree_per_sec = 30.0f;
 
-void rotate_cube(scene::ISceneNode* & cube, float delta_t)
-{
-    core::vector3df rot = cube->getRotation(); 
-    rot.Y += r_degree_per_sec * delta_t; 
-    rot.X += r_degree_per_sec * delta_t;
-
-    cube->setRotation(rot);
-}
-
-
+#ifdef CALC_DELTA
 float calc_delta(IrrlichtDevice *& device, u32 & last_time)
 {
     u32 now = device->getTimer()->getTime();
@@ -31,6 +25,7 @@ float calc_delta(IrrlichtDevice *& device, u32 & last_time)
 
     return deltaTime;
 }
+#endif
 
 class MyEventReceiver : public IEventReceiver
 {
@@ -58,15 +53,32 @@ private:
     bool KeyIsDown[KEY_KEY_CODES_COUNT];
 };
 
-void move_cube(scene::ISceneNode* & cube, float delta_t, MyEventReceiver &receiver)
+#ifdef CUBE
+
+float r_degree_per_sec = 30.0f;
+
+void rotate_cube(scene::ISceneNode* & cube, float delta_t)
+{
+    core::vector3df rot = cube->getRotation(); 
+    rot.Y += r_degree_per_sec * delta_t; 
+    rot.X += r_degree_per_sec * delta_t;
+
+    cube->setRotation(rot);
+}
+
+
+void move_cube(scene::ISceneNode* & cube, float delta_t, MyEventReceiver &receiver, core::vector3df &nodePosition)
 {
     float speed = receiver.IsKeyDown(irr::KEY_SPACE) ? 15.0f : 10.0f;
 
-    core::vector3df nodePosition = cube->getPosition();
-
     if(receiver.IsKeyDown(irr::KEY_KEY_W))
-        nodePosition.Y += speed * delta_t;
+        nodePosition.Z += speed * delta_t;
     else if(receiver.IsKeyDown(irr::KEY_KEY_S))
+        nodePosition.Z -= speed * delta_t;
+
+    if(receiver.IsKeyDown(irr::KEY_UP))
+        nodePosition.Y += speed * delta_t;
+    else if(receiver.IsKeyDown(irr::KEY_DOWN))
         nodePosition.Y -= speed * delta_t;
 
     if(receiver.IsKeyDown(irr::KEY_KEY_A))
@@ -76,9 +88,50 @@ void move_cube(scene::ISceneNode* & cube, float delta_t, MyEventReceiver &receiv
 
     cube->setPosition(nodePosition);
 }
+#endif
+
+Area area(2, irr::core::vector3df(0,0,0));
+
+
+void add_floor(core::vector3df pos, scene::IMesh* mesh, scene::ISceneManager* scenemgr)
+{
+    video::SColor randomColor(
+        255,                    
+        rand() % 256,            
+        rand() % 256,            
+        rand() % 256             
+    );
+    scene::IMeshSceneNode* floorNode = scenemgr->addMeshSceneNode(mesh);
+
+    if(floorNode) {
+        floorNode->setPosition(pos + irr::core::vector3df(area.size.X/2, -1, area.size.Z/2));
+        floorNode->setMaterialFlag(video::EMF_LIGHTING, true);
+        floorNode->getMaterial(0).DiffuseColor = randomColor;
+        floorNode->getMaterial(0).EmissiveColor = randomColor;
+    }
+
+
+}
+
+void generate_floors(int quantity, core::vector3df relative_to, scene::IMesh* mesh, scene::ISceneManager* scenemgr)
+{
+    core::vector3df pos = relative_to;
+
+    core::aabbox3d<f32> bbox = mesh->getBoundingBox();
+    core::vector3df size = bbox.getExtent();
+
+    for(int i {}; i < quantity; i++)
+    {
+        add_floor(pos, mesh, scenemgr);
+        pos.X -= size.X;
+
+    }
+}
 
 int main()
 {
+    srand(time(0));
+
     MyEventReceiver receiver;
     
     IrrlichtDevice *device = createDevice(
@@ -110,24 +163,45 @@ int main()
         core::rect<s32>(10,10,260,22), true);
 
     device->setWindowCaption(L"TestProject");
-
-    scene::ISceneNode* cube = scenemgr->addCubeSceneNode();
-
-    if (cube)
-        cube->setMaterialFlag(video::EMF_LIGHTING, false);
     
-    core::vector3df cameraPos(0, 10, -20);  
-    core::vector3df target(0, 0, 0);
+    irr::SKeyMap keyMap[5];
+    keyMap[0].Action = irr::EKA_MOVE_FORWARD; keyMap[0].KeyCode = irr::KEY_KEY_W;
+    keyMap[1].Action = irr::EKA_MOVE_BACKWARD; keyMap[1].KeyCode = irr::KEY_KEY_S;
+    keyMap[2].Action = irr::EKA_STRAFE_LEFT; keyMap[2].KeyCode = irr::KEY_KEY_A;
+    keyMap[3].Action = irr::EKA_STRAFE_RIGHT; keyMap[3].KeyCode = irr::KEY_KEY_D;
+    keyMap[4].Action = irr::EKA_JUMP_UP; keyMap[4].KeyCode = irr::KEY_SPACE;
+    
 
-    scenemgr->addCameraSceneNode(0, cameraPos, target);
+    scene::ICameraSceneNode* camera = scenemgr->addCameraSceneNodeFPS(
+        0,        
+        80.0f,   
+        0.02f,    
+        -1,       
+        keyMap,   
+        5,
+        true,    
+        0.0f,    
+        false
+    );
 
-    u32 last_time = device->getTimer()->getTime(); 
+    camera->setPosition(core::vector3df(0,5,0));
+
+    device->getCursorControl()->setVisible(false);
+
+
+    //generate_floors(3, irr::core::vector3df(0,0,0), planeMesh, scenemgr);
+
+    HomeRegion homeRegion(
+        1,
+        irr::core::vector3df(0, 0, 0),   
+        "map1.irr"                       
+    );
+    
+    homeRegion.load(scenemgr);
 
     while (device->run())
     {
-        float delta = calc_delta(device, last_time);
-        rotate_cube(cube, delta);
-        move_cube(cube, delta, receiver);
+
         driver->beginScene(true, true, video::SColor(255,100,101,140));
 
         scenemgr->drawAll(); 
@@ -135,8 +209,9 @@ int main()
         driver->endScene();
         
         #ifdef DEV
-        get_memory_usage();
+        print_memory_usage();
         #endif
+        
     }
 
     device->drop();

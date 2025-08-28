@@ -4,7 +4,7 @@
 #include <iostream>
 #include "../headers/perfomance_infos.hpp"
 
-void get_memory_usage()
+void print_memory_usage()
 {
     std::ifstream statm("/proc/self/statm");
 
